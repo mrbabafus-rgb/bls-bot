@@ -1,4 +1,3 @@
-import os
 import time
 import random
 import logging
@@ -7,49 +6,49 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 TELEGRAM_TOKEN = "8613817235:AAEjP-aixzI0NszzZBj9cRlhuTtNNeXAMDA"
-CHAT_ID        = "5481970935"
+CHAT_ID = "5481970935"
 BLS_URL = "https://algeria.blsspainvisa.com/algiers/french/appointment.php"
-AVAILABLE_KEYWORDS   = ["disponible","choisir","sélectionner","créneau","réserver"]
-UNAVAILABLE_KEYWORDS = ["aucun rendez-vous","pas de créneau","indisponible","complet"]
-MIN_INTERVAL = 120
-MAX_INTERVAL = 240
-HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36","Accept-Language":"fr-FR,fr;q=0.9"}
-logging.basicConfig(level=logging.INFO,format="%(asctime)s  %(message)s",datefmt="%H:%M:%S")
+AVAILABLE_KEYWORDS = ["disponible","choisir","créneau","réserver"]
+UNAVAILABLE_KEYWORDS = ["aucun rendez-vous","indisponible","complet"]
+HEADERS = {"User-Agent":"Mozilla/5.0","Accept-Language":"fr-FR"}
+logging.basicConfig(level=logging.INFO,format="%(asctime)s %(message)s")
 log = logging.getLogger(__name__)
 
-def send_telegram(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+def send_telegram(msg):
     try:
-        r = requests.post(url, json={"chat_id":CHAT_ID,"text":message,"parse_mode":"HTML"}, timeout=15)
-        return r.status_code == 200
+        requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",json={"chat_id":CHAT_ID,"text":msg,"parse_mode":"HTML"},timeout=15)
     except Exception as e:
-        log.error(f"Telegram error: {e}")
-        return False
+        log.error(e)
 
 def check_bls():
     try:
-        r = requests.get(BLS_URL, headers=HEADERS, timeout=20)
-        r.raise_for_status()
+        r = requests.get(BLS_URL,headers=HEADERS,timeout=20)
+        soup = BeautifulSoup(r.text,"html.parser")
+        text = soup.get_text().lower()
+        for kw in UNAVAILABLE_KEYWORDS:
+            if kw in text:
+                return False
+        for kw in AVAILABLE_KEYWORDS:
+            if kw in text:
+                return True
     except Exception as e:
-        return False, f"خطأ: {e}"
-    from bs4 import BeautifulSoup
-    soup = BeautifulSoup(r.text, "html.parser")
-    text = soup.get_text(separator=" ").lower()
-    for kw in UNAVAILABLE_KEYWORDS:
-        if kw in text:
-            return False, f"لا مواعيد — «{kw}»"
-    for kw in AVAILABLE_KEYWORDS:
-        if kw in text:
-            return True, f"كلمة «{kw}» موجودة"
-    return False, "ما كاين والو واضح"
+        log.error(e)
+    return False
 
 def main():
-    def main():
-    # Send startup message immediately
-    send_telegram("🤖 <b>BLS Checker بدأ يشتغل!</b>\n\nسنراقب موقع BLS كل دقيقتين.\n\nكي يلقى موعد نبعثلك message فورًا 🔔")
+    send_telegram("BLS Checker bda yshghel! Sنراقب kol daqiqatayn.")
+    count = 0
+    while True:
+        count += 1
+        now = datetime.now().strftime("%H:%M:%S")
+        if check_bls():
+            send_telegram("MAWID METAH DRWK! " + BLS_URL)
+            time.sleep(60)
+        else:
+            log.info(f"{count} {now} la mawaid")
+            if count % 30 == 0:
+                send_telegram(f"Bot shaghal - {count} fahsat - la mawaid")
+        time.sleep(random.randint(120,240))
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        send_telegram("👋 البوت وقف.")
+    main()
