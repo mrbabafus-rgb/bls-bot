@@ -44,22 +44,9 @@ def check_bls():
     return False, "ما كاين والو واضح"
 
 def main():
-    log.info("البوت بدأ!")
-    send_telegram("🤖 <b>BLS Checker بدأ يشتغل!</b>\n\nسنراقب موقع BLS كل دقيقتين.\n🔗 " + BLS_URL + "\n\nكي يلقى موعد نبعثلك message فورًا 🔔")
-    check_count = 0
-    while True:
-        check_count += 1
-        now = datetime.now().strftime("%H:%M:%S")
-        available, reason = check_bls()
-        if available:
-            log.info(f"🟢 [{check_count}] {now} — {reason}")
-            send_telegram(f"🚨 <b>موعد BLS متاح الآن!</b> 🚨\n\n📋 {reason}\n🕐 {now}\n\n👉 <a href='{BLS_URL}'>اضغط هنا وحجز فورًا!</a>\n\n⚡ لا تتأخر!")
-            time.sleep(60)
-        else:
-            log.info(f"🔴 [{check_count}] {now} — {reason}")
-            if check_count % 30 == 0:
-                send_telegram(f"✅ البوت شاغل — {check_count} فحص\n🕐 {now}\n🔴 لا مواعيد بعد...")
-        time.sleep(random.randint(MIN_INTERVAL, MAX_INTERVAL))
+    def main():
+    # Send startup message immediately
+    send_telegram("🤖 <b>BLS Checker بدأ يشتغل!</b>\n\nسنراقب موقع BLS كل دقيقتين.\n\nكي يلقى موعد نبعثلك message فورًا 🔔")
 
 if __name__ == "__main__":
     try:
